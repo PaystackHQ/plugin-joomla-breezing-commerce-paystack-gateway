@@ -45,12 +45,12 @@ class CrBc_Plugins_Payment_Paystack_Site extends CrBcAPaymentSitePlugin implemen
                 'Authorization: Bearer ' . $key]
         );
         $request = curl_exec($ch);
-        curl_close($ch);
 
+        $result = null;
         if ($request) {
             $result = json_decode($request, false);
         }
-        if ($result->data->status == "success") {
+        if (isset($result->data->status) && $result->data->status == "success") {
             $paid = $result->data->amount / 100;
             $result = ['result' => 'success', 'amount' => $paid,'response' => $result->data->gateway_response];
 
@@ -102,7 +102,7 @@ class CrBc_Plugins_Payment_Paystack_Site extends CrBcAPaymentSitePlugin implemen
                             );
 
 
-        $reference = $_GET['reference'];
+        $reference = isset($_GET['reference']) ? $_GET['reference'] : '';
         $order_details  = explode( '_',$reference);
 
         $order_id       = (int) $order_details[0];
@@ -141,7 +141,6 @@ class CrBc_Plugins_Payment_Paystack_Site extends CrBcAPaymentSitePlugin implemen
         $payment_plugin_id = intval($_session_cart['checkout']['payment_plugin_id']);
         
         $_cart = new CrBcCart( $_session_cart );
-        print_r($cart);
         $_cart_items = $_cart->getItems(true);
         
         if(count($_cart_items) == 0){
@@ -192,14 +191,14 @@ class CrBc_Plugins_Payment_Paystack_Site extends CrBcAPaymentSitePlugin implemen
         $paystack->locale = explode('-',$paystack->locale);
         $paystack->locale = $paystack->locale[1];
         
-        if( $paystack->force_locale != '' ){
+        if( isset($paystack->force_locale) && $paystack->force_locale != '' ){
             
             $paystack->locale = $paystack->force_locale;
         }
         
         $paystack->currency = $_cart->currency_code;
         
-        if( $paystack->force_currency != '' ){
+        if( isset($paystack->force_currency) && $paystack->force_currency != '' ){
             
             $paystack->currency = $paystack->force_currency;
         }
@@ -207,7 +206,7 @@ class CrBc_Plugins_Payment_Paystack_Site extends CrBcAPaymentSitePlugin implemen
         $paystack->email =  $_order_info->customer->email;
         $paystack->total =  $_order_info->grand_total * 100;
         
-        if($paystack->cancel_url == ''){
+        if(!isset($paystack->cancel_url) || $paystack->cancel_url == ''){
            $paystack->cancel_url = JUri::root().'media/breezingcommerce/plugins/payment/paystack/site/paystack.png'; 
         }
         
@@ -274,6 +273,10 @@ class CrBc_Plugins_Payment_Paystack_Site extends CrBcAPaymentSitePlugin implemen
         
         $result = CrBcHelpers::loadTranslation($row->$id, 'plugin_payment_paystack');
         
+        if(!isset($row->info)){
+            $row->info = '';
+        }
+
         if($result){
             
             $row->info = $result->body;
